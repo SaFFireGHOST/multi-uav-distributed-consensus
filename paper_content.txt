@@ -1,0 +1,1131 @@
+Citation: Cui, W.; Li, R.; Feng, Y.;
+Yang, Y. Distributed Task Allocation
+for a Multi-UAV System with Time
+Window Constraints. Drones 2022, 6,
+226. https://doi.org/10.3390/
+drones6090226
+Academic Editor: Carlos
+Tavares Calafate
+Received: 6 August 2022
+Accepted: 28 August 2022
+Published: 30 August 2022
+Publisher’s Note: MDPI stays neutral
+with regard to jurisdictional claims in
+published maps and institutional afﬁl-
+iations.
+Copyright: © 2022 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license (https://
+creativecommons.org/licenses/by/
+4.0/).
+drones
+Article
+Distributed Task Allocation for a Multi-UA V System with Time
+Window Constraints
+Wei Cui 1, Ruilin Li 1, Yanxiang Feng 1,2 and Yikang Yang 1,2, *
+1 School of Automation Science and Engineering, Faculty of Electronic and Information Engineering,
+Xi’an Jiaotong University, Xi’an 710049, China
+2 State Key Laboratory for Manufacturing Systems Engineering, Xi’an Jiaotong University, Xi’an 710049, China
+* Correspondence: yangyk74@mail.xjtu.edu.cn
+Abstract: This paper develops a distributed method, namely, distributed allocation with time win-
+dows (DATW) for managing the multi-UAV task assignment problem (MTAP) with complex time
+window constraints. By aiming directly to minimize the average task completion time, the pro-posed
+DATW intends to achieve a conﬂict-free result that allocates all tasks within the validity time win-
+dows. Based on the decentralized PI (Performance Impact) framework, the proposed algorithm
+addresses the MTAP in a three-phase task assignment strategy, which includes task inclusion, conﬂict
+resolution, and task reallocation. The newly introduced task allocation phase achieves a noteworthy
+increase in an average number of allocated tasks. Unlike the traditional PI methods, the start time
+of each task is broadcasted among agents via communication typology, and the signiﬁcance value
+of each task is directly related to its validity time window, such that the vast majority of tasks are
+able to be assigned properly without imposing any extra communication burdens. In the obtained
+conﬂict-free allocation solution by DATW, each task is allocated to a proper UAV with all given
+constraints satisﬁed. Finally, the simulation results demonstrate the effectiveness and superiority of
+the proposed DATW. Compared with existing (CBBA-based) solutions, results show up to an 18%
+increase in success rate (SR) using the proposed method.
+Keywords: multi-UAV system; time window constraint; task allocation; distributed algorithm
+1. Introduction
+Currently, multiagent systems (e.g., unmanned aerial vehicle systems) have drawn
+increasing attention from researchers worldwide [1–6]. In comparison to a single agent,
+multiagent systems can achieve more complicated mission objectives and increase execution
+efﬁciency through cooperation. In this paper, we focus on the application of UAVs in
+multiagent systems due to the advantages of high ﬂexibility, easy assembly, and low-cost
+consumption [7,8]. In particular, UAVs have been widely used in a variety of industries,
+including search and rescue, military reconnaissance, and trafﬁc transportation. To date,
+there is a growing consensus that the multi-UAV task assignment problem (MTAP) has
+become one of the most challenging problems of multiagent systems.
+In general, the MTAP is a combinatorial optimization problem with complex con-
+straints that aims to coordinate a group of UAVs to accomplish various tasks while opti-
+mizing some given overall objectives [9]. Moreover, the MATP is proven to be a nondeter-
+ministic polynomial hard (NP-hard) problem [10], and as a result, the scale of the problem
+has a direct impact on the complexity of the solving process.
+Early studies of the MATP focused on centralized approaches, where each UAV com-
+municates situational awareness (SA) to a centralized server that generates a collaborative
+plan for the entire UAV swarm. Initially, the problem is modeled as mixed-integer linear pro-
+gramming (MILP) [11], which includes multiple processor resource allocation (MPRA) [12],
+the multiple traveling salesman problem (MTSP) [ 13], and the vehicle routing problem
+(VRP) [14]. By embedding complicated constraints into the models, the MILP algorithms
+Drones 2022, 6, 226. https://doi.org/10.3390/drones6090226 https://www.mdpi.com/journal/drones
+Drones 2022, 6, 226 2 of 18
+have advantages in describing the mission; however, the tree search method and exhaustive
+enumerations in MILP have resulted in an explosion in the computational demands for
+large-scale systems. Then, some heuristic algorithms [15–18], namely, swarm intelligence
+algorithms (SIAs), are proposed by searching a certain range of solution space in an ac-
+ceptable time to obtain feasible solutions for MATP . Common heuristic methods include
+the genetic algorithm (GA) [15], ant colony algorithm [16], particle swarm optimization
+algorithm [17], wolf swarm algorithm [ 18], etc. Although these SIAs have a relatively
+straightforward structure, their stability is weak and a single point of failure can bring
+down the entire system [19].
+Recently, some distributed allocation methods have been proposed, which are ﬂexible
+and robust, consuming less communication and computational resources than centralized
+approaches. Most of these distributed approaches (e.g., contract network protocol) [20–23]
+are developed on the basis of market auction mechanisms. The UAVs place bids on
+tasks, and the highest bid wins the assignment. Choi et al., in [24], proposed the classical
+consensus-based bundle algorithm (CBBA) and introduced a consensus procedure to achieve
+agreement on the winning bid values through a consensus routine instead of SA. A series
+of modiﬁcations to the classical CBBA were made in [ 25,26] to expand the function and
+application of such a method. Then, another distributed approach called performance
+impact (PI) was proposed by Whitbrook et al. [27] and Zhao et al. [28], which aims to directly
+optimize the overall objective. Such methods introduce a key concept called signiﬁcance to
+assess each task’s contribution to the local time cost of an UAV . In comparison to CBBA, the
+PI method is developed on the basis of the heuristic optimization principle and can solve
+more time-sensitive MTAP while achieving allocation with lower time costs across tasks.
+In realistic situations, the existence of various constraints and uncertainties will cause
+signiﬁcant growth in the complexity of MATP [29]. To this end, most studies on MTAP
+describe this problem in terms of ideal mathematical models. For example, [30] proposes
+a “closed-loop CBBA” that considers the return of UAVs to the take-off base after the
+mission is completed, but ignores existing constraints during the allocation. Ponda et al.,
+in [26], proposed an extension algorithm of CBBA to handle MTAP with time window
+constraints and vehicle fuel cost constraints; however, the allocated tasks in results notably
+decrease when time window constraints between tasks are more complex. In addition,
+PI-MaxAss was proposed as an extension of PI by Turner et al. [31], which aims to maximize
+the number of task allocations under strict time constraints. This article discusses task
+deadlines under a search and rescue scenario, while the time window constraints between
+tasks are ignored.
+In this paper, common constraints such as time windows and UAV capabilities are
+combined to build a complex MTAP model. We propose an algorithm, namely,distributed
+allocation with time windows (DATW), which aims to achieve conﬂict-free allocation with
+a minimum average task completion time. The proposed DATW embeds time window
+constraints into the PI-based framework and iterates between three phases: thetask inclusion
+phase, conﬂict resolution phase, and task reallocation phase. The ﬁrst phase selects the optimal
+task within validity time windows for each UAV . The second reaches a consensus based on
+the signiﬁcance value over all UAVs. The last allocates the tasks that remain unassigned
+after the former two phases due to time window constraints. Note that the time window
+constraints in this paper are “hard constraints”, i.e., each task must start within its time
+window constraints; otherwise, the task is not allowed to be assigned. The key contributions
+of this paper are summarized as follows:
+1. The time window constraints are ﬁrst embedded into the PI-based framework. That is,
+the signiﬁcance value of each task is directly related to its validity time window. In the
+obtained allocation, the vast majority of tasks are assigned by achieving a minimum
+average task completion time.
+2. Compared with the PI method in [22], a new task reallocation phase that only con-
+siders the marginal signiﬁcance value is proposed. The number of allocated tasks is
+Drones 2022, 6, 226 3 of 18
+effectively improved by the aid of this third phase, where simulation results show
+that the average rate of feasible tasks has exceeded 70%.
+3. The experiments reveal that the proposed DATW assigns more tasks within validity
+time windows than the existing E-CCBA method in [26]. In addition, the DATW has
+facilitated an 18% increase in success rate when assigning all tasks for UAVs.
+This paper is organized as follows. Section 2 presents the description of MTAP and
+depicts the mathematical model of the distributed allocation with time window constraints.
+Section 3 proposes the PI-based distributed method DATW to solve the studied task
+allocation problem. Section 4 presents numerical simulations to demonstrate the merits of
+DATW. Finally, Section 5 concludes the paper.
+2. Problem Description
+This paper studies the multi-UAV task assignment problem (MTAP) with time window
+constraints. Let Nt = {t1, t2, . . . , tm} be the set of m tasks and Nu = {u1, u2, . . . , un} be a set of
+n UAVs. A list of key symbols used hereafter is provided in Table 1. The properties of each
+tj ∈ Nt are denoted by a tuple <loc(tj), Dj>, where loc(tj) = (xj, yj, zj) is the coordinate of the
+task in the 3-D spatial plane and Dj is the duration required to perform task tj. Meanwhile,
+an UAV ui ∈ Nu is denoted by <loc(ui), vi>, where loc(ui) = (xi, yi, zi) is the initial position of
+ui, and vi is the ﬂight velocity. UAVs communicate through a local communication topology
+denoted by a symmetric adjacency matrix G, where Gih = 1 means ui and uh are capable of
+communicating with each other, whileGih = 0 otherwise. We usePi = <ti1, ti2, . . . , ti|Pi|> to
+denote an ordered sequence of tasks assigned to ui; UAV ui starts from its initial coordinate
+loc(ui) and performs tasks in Pi sequentially. Once UAV ui completes task tij in Pi, it
+immediately ﬂies to the location of the next task tij+1. The assigned task sequences for all
+UAVs constitute a task allocation P = [P1, P2, . . . , Pn]T of MTAP under consideration.
+Table 1. Symbol Deﬁnitions.
+Symbol Deﬁnitions
+Nt Set of m tasks
+Nu Set of n UAVs
+Dj The duration required to perform task tj
+loc(tj) The spatial location of task tj, loc(tj) = (xj, yj, zj)
+loc(ui) The initial position of UAV ui, loc(ui) = (xi, yi, zi)
+vi The ﬂight velocity of UAV ui
+G The communication topology between UAVs
+Pi An ordered sequence of tasks for UAVui
+Φ(p, Pi) The task which locates at the p-th position in the sequence Pi
+Tj(Pi) The time at which ui starts to execute tj
+F(Pi) The sum of the completion times for all tasks in Pi, i.e., the
+local time cost of ui
+Li The execution capacity of ui
+[Tj_start, Tj_end ] The execution time window of task tj
+Zi
+A task list stored on agent ui that keeps track of which task
+is assigned to which UAV
+Qi
+A list stored on ui that records the signiﬁcance value for
+each task
+Ti A list stored on ui that records the start time for each task
+si A list of timestamps for ui
+Pi⊖tj Pi with task tj removed
+qij(Pi⊖tj) The signiﬁcance value of task tj for ui
+Pi⊕k tj Pi with task tj inserted into the kth position
+qij*(Pi⊕tj) The marginal signiﬁcance value of task tj for ui
+On the basis of the above-mentioned information, the general working mechanism
+of the multi-UAV systems with time window is illustrated in Figure 1. Herein, the initial
+information board inputs all the relevant information of tasks and the underlying time
+Drones 2022, 6, 226 4 of 18
+window constraints which should be satisﬁed by all UAVs. Speciﬁcally, for each UAV
+ui, its reason system generates an allocation plan Pi consisted of tasks assigned to ui and
+their ordered sequence. Whenever a ui includes a new task, it updates the task’s time
+information and transmits this information to another UAVuj with Gij = 1 via communi-
+cation link. This reasoning system continuously updates the allocation plan according to
+newly received information. Based on such a dynamic reasoning system, all UAVs work
+in parallel and interact with each other. Thus, one key problem of our paper is to design
+an effective reasoning system to achieve a conﬂict-free allocation by satisfying all time
+window constraints.
+Drones 2022, 6, x FOR PEER REVIEW 3 of 19 
+ 
+1. The time window constraints are first embedded into the PI-based framework. That 
+is, the significance value of each task is directly related to its validity time window. 
+In the obtained allocation, the vast majority of tasks are assigned by achieving a min-
+imum average task completion time. 
+2. Compared with the PI method in [22], a new task reallocation phase that only con-
+siders the marginal significance value is proposed. The number of allocated tasks is 
+effectively improved by the aid of this third phase, where simulation results show 
+that the average rate of feasible tasks has exceeded 70%. 
+3. The experiments reveal that the proposed DATW assigns more tasks within validity 
+time windows than the existing E-CCBA method in [26]. In addition, the DATW has 
+facilitated an 18% increase in success rate when assigning all tasks for UAVs. 
+This paper is organized as follows. Section 2 presents the description of MTAP and 
+depicts the mathematical model of the distributed allocation with time window con-
+straints. Section 3 proposes the PI-based distributed method DATW to solve the studied 
+task allocation problem. Section 4 presents numerical simulations to demonstrate the mer-
+its of DATW. Finally, Section 5 concludes the paper. 
+2. Problem Description 
+This paper studies the multi-UAV task assignment problem (MTAP) with time win-
+dow constraints. Let Nt = {t1, t2, …, tm} be the set of m tasks and Nu = {u1, u2, …, un} be a set 
+of n UAVs. A list of key symbols used hereafter is provided in Table 1. The properties of 
+each tj ∈ Nt are denoted by a tuple < loc(tj), Dj>, where loc(tj) = (xj, yj, zj) is the coordinate 
+of the task in the 3-D spatial plane and Dj is the duration required to perform task tj. Mean-
+while, an UAV ui ∈ Nu is denoted by < loc(ui), vi>, where loc(ui) = (xi, yi, zi) is the initial 
+position of ui, and vi is the flight velocity. UAVs communicate through a local communi-
+cation topology denoted by a symmetric adjacency matrix G, where Gih = 1 means ui and 
+uh are capable of communicating with each other, while Gih = 0 otherwise. We use Pi = <ti1, 
+ti2, …, ti|Pi|> to denote an ordered sequence of tasks assigned to ui; UAV ui starts from its 
+initial coordinate loc(ui) and performs tasks in Pi sequentially. Once UAV ui completes task 
+tij in Pi, it immediately flies to the location of the next task tij+1. The assigned task sequences 
+for all UAVs constitute a task allocation P = [P1, P2, …, Pn]T of MTAP under consideration. 
+On the basis of the above-mentioned information, the general working mechanism 
+of the multi-UAV systems with time window is illustrated in Figure 1. Herein, the initial 
+information board inputs all the relevant information of tasks and the underlying time 
+window constraints which should be satisfied by all UAVs. Specifically, for each UAV ui, 
+its reason system generates an allocation plan Pi consisted of tasks assigned to ui and their 
+ordered sequence. Whenever a ui includes a new task, it updates the task’s time infor-
+mation and transmits this information to another UAV uj with Gij = 1 via communication 
+link. This reasoning system continuously updates the allocation plan according to newly 
+received information. Based on such a dynamic reasoning system, all UAVs work in par-
+allel and interact with each other. Thus, one key problem of our paper is to design an 
+effective reasoning system to achieve a conflict-free allocation by satisfying all time win-
+dow constraints.  
+ 
+Figure 1. General system architecture for distributed multi-UAV systems with time windows.
+For the sake of convenience, we use the notation Φ(Pi, g) = tj to denote the fact that
+task tj is the g-th (g > 1) task in Pi, i.e., tj = tig. If task tk is tj’s preorder task, Φ(Pi, g−1) = tk.
+Then, the time parameter Tj(Pi), when ui starts to execute tj, is calculated as follows:
+Tj(Pi) =
+
+
+
+Tk(Pi) + Dk +
+dis(loc (tk),loc(tj))
+vi
+, g > 1
+dis(loc (ui),loc( tj))
+vi
+, g = 1
+(1)
+where dis(•) represents the distance between two different locations. Moreover, the comple-
+tion time Fj(Pi) for task tj is calculated as follows:
+Fj(Pi) = Tj(Pi) + Dj (2)
+In the rest of this paper, let F(Pi) = ∑tk∈Pi Fk(Pi) be the sum of the completion time
+for all tasks in Pi; herein, F(Pi) is called the local time cost of UAV ui.
+The practical MTAP is subject to the constraints related to UAVs and tasks:
+1. Conﬂict-freeness: each task is only assigned to one UAV .
+2. Capability constraints: each UAV can execute at most Li tasks at a time. That is,
+|Pi| ≤ Li (1 ≤ i ≤ n) (3)
+3. Time window constraints: each task must be started during the interval of a time
+window. Let Tj_start be the earliest start time of task tj, and Tj_end be the latest start
+time so that the validity interval for tj is given as
+Tj(Pi) ∈
+[
+Tj_start , Tj_end
+]
+(4)
+4. Power consumption constraints: the remaining fuel mass Fri for each UAV must be more
+than a threshold ∆. Let Foi be the initial fuel mass of UAVui, and ui consumes the fuel
+at a nominal rate vmi, such that the power consumption constraint is given as follows
+Fri = Foi − vmi × F (Pi) ≥ ∆ (5)
+Drones 2022, 6, 226 5 of 18
+This paper aims to ﬁnd the optimal task allocation for MATP with the goals of satisfy-
+ing the above-mentioned constraints and minimizing the global time cost, which is the sum
+of all local time costs across all UAVs. The sought MTAP can be modeled mathematically
+as follows:
+J = min
+{
+∑
+n
+i=1 F (Pi)
+}
+(6)
+s.t. ⋃n
+i=1 Pi = Nt, Pi
+⋂ Pj = ∅, i ̸= j (7)
+|Pi| ≤ Li, ∀ui ∈ Nu (8)
+Tj_start ≤ Tj(Pi) ≤ Tj_end, ∀tj ∈ Pi, ∀ui ∈ Nu (9)
+Fri = Foi − vmi × F (Pi) ≥ ∆, ∀ui ∈ Nu (10)
+where objective (6) minimizes the global time cost; (7) ensures that the allocation includes
+all tasks and each task is assigned to only one UAV , indicating conﬂict-freeness; (8) ensures
+that the number of tasks assigned to each UAV ui does not exceed the execution capacity Li;
+(9) guarantees the satisfaction of the time window constraint for all tasks; (10) ensures that
+each UAV satisﬁes the power consumption constraints.
+3. Distributed Allocation with Time Window Constraints
+This section proposes a heuristic method, namely,distributed allocation with time win-
+dows (DATW), for solving the MATP under consideration. The DATW algorithm is run
+concurrently on all UAVs that transmit information to each other via local communication.
+The proposed DATW algorithm consists of three phases: task inclusion, conﬂict resolution,
+and task reallocation. The ﬁrst two phases are performed iteratively until an initial allocation
+is agreed upon by all UAVs, although some tasks may remain unassigned. Then, the last
+phase aims to maximize the allocation of these unassigned tasks to UAVs under the time
+window constraints.
+Before introducing the DATW algorithm, some message or information stored on each
+UAV ui is deﬁned as follows.
+• Task list: Zi = [Zi1, . . . , Zim]T is a vector that keeps track of which task is assigned
+to which UAV . The entryZij = k if ui thinks that task tj is assigned to uk, while Zij is
+inﬁnity, i.e., Zij → ∞, if ui deems tj to be unassigned;
+• Task signiﬁcance list: Qi = [Qi1, . . . , Qim]T is a vector recording the signiﬁcance values
+of all tasks; the concept of the signiﬁcance of tasks will be given in Section 3.1. If Zij →
+∞, we set Qij → ∞;
+• Task start time list: Ti = [Ti1, . . . , Tim]T is a vector recording the begin-execute time for
+each task. When Zij = k, Tij reﬂects the time when UAV uk starts to execute task tj.
+Note that if Zij → ∞, Tij → ∞;
+• Timestamp list: si = [si1, . . . , sin]T records the timestamp when ui obtains the latest
+message from each of the other UAVs. Once a message is passed, the timestamp sih is
+calculated as follows:
+sih =
+{ τr, Gih = 1
+max α:Giα=1sαh − 1, Gih ̸= 1 (11)
+where τr represents the time when ui receives the information.
+3.1. Task Inclusion Phase
+In the ﬁrst phase, each UAV ui selects the optimal task that can minimize ui’s local
+time cost and inserts this task into a proper position of list Pi so that the time window
+constraints are satisﬁed. The concepts of “signiﬁcance” and “marginal signiﬁcance” are
+given to describe how tasks affect the local time cost of an UAV .
+Drones 2022, 6, 226 6 of 18
+1. Signiﬁcance
+Consider a task tj ∈ Pi; let Pi⊖tj represents the remaining task sequence after removing
+tj from Pi. Then, the signiﬁcance value of tj with regard to ui is formulated as follows:
+qij
+(
+Pi ⊖ tj
+)
+=
+[
+F (Pi) − F
+(
+Pi ⊖ tj
+)]
+×
+[
+Tj(Pi) − Tj_start
+]
+(12)
+By deﬁnition, qij(Pi⊖tj) is composed of two parts:F(Pi) − F(Pi⊖tj) and Tj(Pi) − Tj_start.
+The ﬁrst part equals the decrease in ui’s local time cost by removing tj from Pi, directly
+reﬂecting the contribution of tj to the local time cost of ui. Meanwhile, the second is the
+interval between the earliest start time allowed for tj to start under the time window con-
+straints and the time ui starts to execute tj. That is, agent ui gives preference to tasks that
+are performed immediately upon meeting the time window constraints. In this case, both
+Tj(Pi) and Fj(Pi) for task tj are further decreased, and thus, the contribution of tj to the local
+time cost of ui is logically decreased. Note that if tj /∈ Pi, let qij(Pi⊖tj) →∞.
+2. Marginal signiﬁcance
+Considering a task tj /∈ Pi, the local time cost of UAV ui is increased after inserting
+tj into Pi. Then, the marginal signiﬁcance, denoted by qij*(Pi⊕tj), is required to reﬂect
+the minimum increase in ui’s local time cost by adding tj into Pi, which is formulated
+as follows:
+q∗
+ij
+(
+Pi ⊕ tj
+)
+= min|Pi|+1
+k=1
+[
+F
+(
+Pi ⊕k tj
+)
+− F (Pi)
+]
+×
+[
+Tj(Pi) − Tj_start
+]
+(13)
+where Pi⊕k tj represents the task sequence after inserting tj into the kth position of Pi. Note
+that qij*(Pi⊕tj) → ∞ if tj ∈ Pi. Moreover, if tj ∈ Pi, Zij= i and Qij= qij(Pi⊖tj).
+In this task inclusion phase, a task tj is allowed to be assigned to the UAV ui if the
+following conditions hold:
+(a). Zij ̸= i and qij*(Pi⊕tj) < Qij;
+(b). Let p = argqij*(Pi⊕tj); after inserting tj into the p-th position of Pi, all tasks in the
+sequence Pi⊕ptj satisfy the underlying time window constraints;
+(c). Foi – vmi × F (Pi⊕tj) ≥ ∆.
+The above condition (a) ensures that tj is unassigned to ui and requires that the
+marginal signiﬁcance value qij*(Pi⊕tj) for tj is strictly less than its signiﬁcance Qij stored
+on ui, such that the global time cost might be decreased by assigning tj to ui. Condi-
+tion (b) guarantees the satisfaction of time window constraints after inserting tj into Pi,
+while condition (c) ensures the satisfaction of power consumption constraints.
+Let ℘(Pi) = {tj ∈ Nt | Conditions (a), (b), and (c) both hold for tj and ui} be the set of
+tasks that satisfy the above conditions. This phase chooses the task tk ∈ ℘(Pi) expressed in
+(14) and inserts it into the position p = argqik*(Pi⊕tk) of list Pi.
+tk = argmax tj∈℘(Pi)(Qij − q∗
+ij
+(
+Pi ⊕ tj
+)
+) (14)
+The corresponding information related to task tk is updated as Zik = i, Qik = qik*(Pi⊕tk),
+and the start time for all tasks in Pi is recalculated.
+The above task addition process is repeated until ℘(Pi) = ∅ or | Pi| = Lt, which
+indicates that no task can be included in Pi. Since the inclusion of new tasks may change
+the signiﬁcance of other existing tasks in Pi, the list Qi is required to update accordingly
+(12) after inclusion. The whole procedure is depicted in Algorithm 1.
+Drones 2022, 6, 226 7 of 18
+Algorithm 1: ui execution task adding process at iteration λ.
+Initialization: Pi(λ) = Pi(λ − 1), Zi(λ) = Zi(λ − 1), Qi(λ) = Qi(λ − 1), Ti(λ) = Ti(λ − 1).
+1: while |Pi| ≤ Li do
+2: For each task tj ∈ Pi compute the marginal signiﬁcance value qij*(Pi⊕tj);
+3: Compute ℘(Pi) ← {tj ∈ Nt | Conditions (a), (b) and (c) both hold for tj and ui};
+4: if ℘(Pi) ̸= ∅ then
+5: tk ← argmax tj∈℘(Pi)(Qij − qij*(Pi⊕tj));
+6: p ← argqij*(Pi⊕tk);
+7: Insert task tk into p − th of Pi;
+8: Zik← i;
+9: Qik ← qij*(Pi⊕tj);
+10: Update Ti;
+11: end if
+12: else
+13: break;
+14: end if
+15: end while
+16: Update Qi;
+3.2. Conﬂict Resolution Phase
+In the previous task inclusion phase, a task may be assigned to more than one UAV ,
+as Algorithm 1 runs concurrently on all UAVs, leading to a conﬂict. Thus, the second
+phase is conducted to obtain a conﬂict-free allocation via local communication topology.
+In particular, the conﬂict resolution phase is composed of two stages: (i) consensus, where
+UAVs communicate with each other for consensus, and (ii) task removal, where UAVs
+determine whether to remove a task from its current task list. These two stages are repeated
+alternately on each UAV until the global consensus is achieved across all UAVs, i.e.,Qi = Qh,
+∀ui, uh ∈ Nu, and ui ̸= uh.
+3.2.1. Consensus Stage
+To search for the smallest signiﬁcance value for every task, in this stage, each UAV
+ui transmits the relevant information, including Zi, Qi, Ti, and si, to its neighbor UAV uj
+through local communications.
+Suppose that UAV ui receives a message from uh where Gih = 1. It determines whether
+the received message is the latest for task tj based on lists Zi and si, and then, three possible
+actions are taken on task tj:
+• Update: Zij = Zhj, Qij = Qhj, Tij = Thj;
+• leave: Zij = Zij, Qij = Qij, Tij = Thj;
+• reset: Zij → ∞, Qij → ∞, Tij → ∞.
+Speciﬁcally, agents select actions according to the decision rules given in Table 2. The
+ﬁrst two columns of Table 2 record the executor of tasktj believed by sender uh and receiver
+ui, respectively. The third column outlines the action taken on tj with respect to receiver
+ui. Note that once a piece of message is passed, timestamp gi is updated according to
+Formula (11) to obtain the latest time information.
+3.2.2. Task Removal Stage
+After the consensus stage, each UAV ui checks the current task sequence Pi and
+removes tasks in two sets A = {tj ∈ Pi | Z ij ̸= i } and B = {tj ∈ Pi | T j(Pi) <Tj_start or
+Tj(Pi) >Tj_end}. Herein, A denotes the set of tasks in Pi whose corresponding information
+Zij has been changed after the communication, while B represents the set of tasks in Pi
+violating the time window constraints.
+Drones 2022, 6, 226 8 of 18
+Table 2. UAVs communication rule.
+Zhj (uh is Sender) Zij (ui is Receiver) ui’s Action
+h
+i if Qhj < Qij: update
+h update
+α/∈{h,i} if shα > siα or Qhj < Qij: update
+∞ update
+i
+i leave
+h reset
+α/∈{h,i} if shα > siα: reset
+∞ leave
+α/∈{h,i}
+i if shα > siα and Qhj < Qij: update
+h
+if shα > siα: update
+other case: reset
+α if shα > siα: update
+β /∈ {h,I,m}
+if shα > siα and shβ > siβ: update
+if shα > siα and Qhj < Qij: update
+if shβ > siβ and siα > shα: reset
+∞ if shα > siα: update
+∞
+i leave
+h update
+α/∈{h,i} if shα > siα: update
+First, a task in A can be removed from Pi and A, according to the following criterion:
+max tj∈A
+(
+qij − Qij
+)
+> 0 (15)
+where qij = F(Pi) − F (Pi⊖tj) represents the signiﬁcance of tj computed from the current
+task sequence Pi, while Qij denotes tj’s signiﬁcance obtained from the consensus stage.
+We release a task tk from Pi and A such that tk = argmax tj∈A
+(
+qij − Qij
+)
+. This removal
+process is continued until (15) is not satisﬁed orA is empty. When this process is terminated
+but A ̸= ∅, each remaining task tk ∈ A should be returned to agent ui by setting Zik = ui.
+Next, each UAV ui checks its sequence Pi and releases the tasks in B sequentially.
+Speciﬁcally, once there is a tasktj ∈ Pi that does not meet the time window constraint, tj
+is removed from the sequence Pi immediately, and the related information is updated as
+Zij → ∞, Qij → ∞, Tij → ∞. Note that each time ui removes a task from Pi, the start time
+for other tasks in Pi is updated. Thus, we need to update set B after each removal. Such
+a removal process is repeated alternately until all tasks in all Pi satisfy the time window
+constraint. At the end of the task removal stage, the relevant information Qij and Tij for
+each tj ∈ Pi is updated correspondingly.
+In the conﬂict resolution phase, the algorithm iterates over the consensus stage and
+task removal stage until a global consensus is achieved across all UAVs. To this end, we
+obtain a conﬂict-free allocation where tasks are assigned by meeting the time window
+constraints. The whole procedure is illustrated by Algorithm 2.
+Drones 2022, 6, 226 9 of 18
+Algorithm 2: Conﬂict resolution phase of UAVui at iteration λ.
+Initialization: Pi(λ) = Pi(λ − 1), Zi(λ) = Zi(λ − 1), Qi(λ) = Qi(λ − 1), Ti(λ) = Ti(λ − 1), set si to
+zero vector.
+1: Send Qi, Ti,Zi and si to uh where Gih=1;
+2: Receive Qh,Th,Zh and sh from uh where Ghi=1;
+3: Update Qi, Ti,Zi and si according to the rules in Table 2;
+4: A←{tj ∈ Pi |Zij ̸= i, tj ∈ Pi};
+5: while max tj∈A
+(
+qij − Qij
+)
+> 0 do
+6: tk ← argmax tj∈A
+(
+qij − Qij
+)
+;
+7: Remove task tk from Pi and A;
+8: end while
+9: if A̸=∅ then
+10: let Zij = i, ∀tj ∈A;
+11: end if
+12: B←{tj ∈ Pi |Tj(Pi) <Tj_start or Tj(Pi) >Tj_end};
+13: while B̸=∅ do
+14: Remove task tk∈B from Pi;
+15: Set Zij, Qij, Tij as inﬁnity values
+16: Update B;
+17: end while
+3.3. Task Reallocation Phase
+After completing iterations between the above phases, the obtained allocation gener-
+ally covers all tasks. However, in some cases, a few tasks may remain unassigned due to
+the strict time window constraints. Let Cai be the set of these unassigned tasks for each
+UAV ui, i.e., Cai ={tk | Zik→∞}. This phase intends to reassign tasks in Cai to some UAVs to
+increase the number of allocated tasks. That is, for each UAV ui, only tasks in Cai can be
+added to or removed from the current list Pi, while assigned task tj /∈ Cai is not allowed
+to be moved. This phase is composed of two stages: secondary inclusion and secondary
+conﬂict resolution.
+3.3.1. Secondary Inclusion
+We deﬁne a vector Mi = [mi1, mi2, . . . , mi|Cai|]T for all tasks in Cai with regards to
+UAV ui, where the entry mij = 1 if a task tj ∈ Cai has been added to Pi but removed from the
+same sequence for violating time window constraint, and mij = 0 otherwise. By deﬁnition,
+a task tj ∈ Cai can be assigned to UAV ui according to the following conditions:
+(d). Zij ̸= i and mij = 0;
+(e). let p = argqij*(Pi⊕tj); after inserting tj into the p-th position of Pi, all tasks in the
+sequence Pi⊕ptj satisfy the underlying time window constraint.
+(f). Foi – vmi × F (Pi⊕tj) ≥ ∆.
+Condition (d) ensures that tasks are not repeatedly added or removed by the same UA V ,
+condition (e) ensures that all tasks inPi⊕tj satisfy the time window constraints after inserting
+tj into Pi, and condition (f) ensures the satisfaction of power consumption constraints.
+Let ℜ(Pi, Cai) = {tj ∈ Cai | Conditions (d), (e) and (f) both hold for tj and ui} denote
+the set of tasks that satisﬁes the above conditions. To minimize the signiﬁcance value, each
+UAV ui chooses the task tk∈ℜ(Pi, Cai), according to (16), and inserts it into the position
+p = argqik*(Pi⊕tk) of list Pi.
+tk = argmin tj∈ℜ(Pi, Cai)q∗
+ij (Pi ⊕ tj) (16)
+Different from criterion (14), (16) requires that the UAV only selects out the unassigned
+task tk with the minimum marginal signiﬁcance value. The above process is repeated until
+no task can be included in Pi, i.e., ℜ(Pi, Cai) = ∅ |Pi| = Li.
+Drones 2022, 6, 226 10 of 18
+3.3.2. Secondary Conﬂict Resolution
+To obtain a conﬂict-free allocation, the secondary conﬂict resolution stage iterates
+between the consensus process and the task removal process until global consensus is
+achieved across all UAVs.
+In the consensus process, the heuristic consensus rule proposed in Section 3.2.1 is used
+to obtain a conﬂict-free allocation. Note that each UAV only exchanges the information
+related to tasks in Cai with its neighboring UAVs through local communications. According
+to the decision rules given in Table 2, once ui receives a message, it updates, resets, or leaves
+the stored information Zij, Qij, Tij, and sij for each task tj ∈ Cai.
+Then, in the task removal process, each UAVui checks its current task sequence Pi and
+removes tasks belonging to two sets A′={tj ∈ Pi | Zij ̸= i} and B′={tj ∈ Pi | Tj(Pi)<Tj_start or
+Tj(Pi)>Tj_end} from Pi. Herein, A′ denotes the set of tasks whose information Zij is changed
+after the consensus process, while B′ represents the set of tasks violating the time window
+constraints. The tasks in A′ and B′ are sequentially removed fromPi using the same method
+as in Section 3.2.2. In addition, each time a task tj ∈ B′ is removed, we update its related
+information as Zij → ∞, Qij → ∞, Tij → ∞, and we also set mij = 1 such that task tj is
+prevented from repeatedly assigning to Pi, according to condition c). These requirements
+not only avoid invalid task inclusion and removal, but also improve the performance of the
+entire system.
+The secondary inclusion and secondary conﬂict resolution are repeated alternately
+until no actions can be made for a period of time. That is, the task reallocation phase has
+already converged, and an optimized global conﬂict-free task assignment that satisﬁes all
+time window constraints is obtained.
+3.4. Convergence Analysis
+The ﬁrst two phases of the DATW algorithm alternate until an initial allocation is
+obtained, and then, the last phase is performed to reallocate these unassigned tasks. In
+the ideal case, the system deems to be converged when no changes can be made in the
+ﬁrst two phases. However, due to the strict time window constraints, some tasks may be
+repeatedly included and removed by the same UAV , and thus, an inﬁnite cycle arises. To
+avoid such reiteration and reallocate those tasks in the last phase, iterations between the
+ﬁrst two phases are terminated, provided that the allocations obtained after the second
+phase remain the same for a speciﬁed period.
+Moreover, each UAV always aims to decrease the global time cost at each iteration.
+Speciﬁcally, the signiﬁcance value of a task is highly related to its current contribution to
+the local time cost of its assigned UAV . In the ﬁrst two phases, each UAVui exchanges the
+signiﬁcance of all tasks with its neighbor UAVs, and then, based on these signiﬁcance values,
+ui tries to decrease the global time cost∑n
+n=1 F (Pi) by recursively adding or removing tasks
+from its task sequence. The last phase reassigns tasks in Cai, which collects all unassigned
+tasks after the ﬁrst two phases, to agents. In particular, each ui selects unassigned tasks
+in Cai with the minimum signiﬁcance value in each iteration of the last phase. Note that
+the initial signiﬁcance value for each task is set to inﬁnity and is continuously updated as
+the signiﬁcance of a task is highly correlated with the current allocation. Consequently, the
+DATW algorithm converges when the task signiﬁcance list of each UAV is not changed for
+a speciﬁed period of time.
+Formally, the proposed DATW running on each UAV can be expressed in detail
+as follows.
+Step 1: Performing the task inclusion phase, according to Algorithm 1.
+Step 2: Running Algorithm 2. The conﬂict resolution phase is repeated until global
+consensus is achieved over all UAVs.
+Step 3: Step 1 and Step 2 are repeated until the allocation obtained after Step 2 remains
+the same for a speciﬁed period of time.
+Step 4: Carrying out the secondary inclusion stage to assign tasks in Cai to agents.
+Drones 2022, 6, 226 11 of 18
+Step 5: Carrying out the secondary conﬂict resolution stage, performing the consensus
+process and the task removal process alternately, until the global consensus is achieved
+over all UAVs.
+Step 6: Step 4 and Step 5 are repeated until no changes have been made in the task
+signiﬁcance list Qi for a speciﬁed period of time, and then, the algorithm is completed.
+Moreover, we obtain the working architecture of the DATW by integrating the above
+6steps through the process in Figure 2.
+Drones 2022, 6, x FOR PEER REVIEW 11 of 19 
+ 
+Step 2: Running Algorithm 2. The conflict resolution phase is repeated until global 
+consensus is achieved over all UAVs. 
+Step 3: Step 1 and Step 2 are repeated until the allocation obtained after Step 2 re-
+mains the same for a specified period of time. 
+Step 4: Carrying out the secondary inclusion stage to assign tasks in Cai to agents. 
+Step 5: Carrying out the secondary conflict resolution stage, performing the consen-
+sus process and the task removal process alternately, until the global consensu s is 
+achieved over all UAVs. 
+Step 6: Step 4 and Step 5 are repeated until no changes have been made in the task 
+significance list Qi for a specified period of time, and then, the algorithm is completed. 
+Moreover, we obtain the working architecture of the DATW by integrating the above 
+6steps through the process in Figure 2. 
+ 
+Figure 2. Working architecture for the distributed allocation with time windows. 
+4. Simulation 
+In this section, numerical simulations are conducted to assess the effectiveness of the 
+proposed DATW algorithm. The proposed method is first verified across search and res-
+cue scenarios with different settings genera ted randomly. Then, the proposed method is 
+compared with an extension of the CBBA (E -CBBA) method in [26] in terms of various 
+parameter settings. 
+4.1. Scenario and Simulation Setup 
+The performance of the DATW method is evaluated based on the search and rescue 
+scenarios proposed in [28]. Suppose that a number of survivors are discovered in a specific 
+area, and a group of UAVs are required to perform rescue tasks on these survivors. The 
+survivors are classified as A-type, B-type, and C-type according to their health condition. 
+All survivors are considered to have equal priority but must be rescued within the differ-
+ent time window constraints summarized in Table 3. It is assumed that one-quarter of the 
+Figure 2. Working architecture for the distributed allocation with time windows.
+4. Simulation
+In this section, numerical simulations are conducted to assess the effectiveness of
+the proposed DATW algorithm. The proposed method is ﬁrst veriﬁed across search and
+rescue scenarios with different settings generated randomly. Then, the proposed method
+is compared with an extension of the CBBA (E-CBBA) method in [26] in terms of various
+parameter settings.
+4.1. Scenario and Simulation Setup
+The performance of the DATW method is evaluated based on the search and rescue
+scenarios proposed in [28]. Suppose that a number of survivors are discovered in a speciﬁc
+area, and a group of UAVs are required to perform rescue tasks on these survivors. The
+survivors are classiﬁed as A-type, B-type, and C-type according to their health condition.
+All survivors are considered to have equal priority but must be rescued within the different
+time window constraints summarized in Table 3. It is assumed that one-quarter of the
+survivors are A-type, one-quarter are B-type and the remaining ones are C-type. The goal
+is to minimize the average time cost across all rescue tasks and to rescue as many survivors
+as possible upon the validity time interval. Moreover, in such a scenario, all UAVs and
+survivors are randomly initialized in a 10,000 × 10,000 × 1000 m 3-D spatial plane. The
+UAVs’ speeds are assumed to always be 50 m/s, and each UAV takes 30 s to rescue a
+Drones 2022, 6, 226 12 of 18
+survivor but executes at most ﬁve tasks at a time. Moreover, the UAVs’ initial fuel masses
+are set as 400kg, and each UAV consumes the fuel at 0.05kg/s.
+Table 3. Time Window Constraints [Tj_strart, Tj_end] of rescue missions for A, B, and C survivors.
+Survivors’ Type
+Range of Values for the
+Earliest Start Time Tj_strart of
+a Rescue Mission
+Range of Values for the
+Latest Start Time Tj_end of
+Rescue Missions
+A [0 s, 20 s] [100 s, 120 s]
+B [50 s, 200 s] [300 s, 400 s]
+To better describe the problem size of various scenarios, we introduce a new parameter,
+namely, the task-to-UAV ratio (TUR), represented by δ ≡ m/n, where m (resp. n) is the
+number of tasks (resp. UAVs). Table 4 shows the parameters of all testing scenarios where
+the UAV number is denoted by n ∈ {3, 4, 9, 10, 15, 16} and the corresponding TUR is set as
+δ ∈ {1, 2, 3}. Hence, there are 18 = 6 × 3 combinations of scenarios to consider. The time
+windows for all these combinations are randomly generated, according to Table 3.
+Table 4. Parameter Size for Each Instance Type.
+Instance Type UA V Num TUR
+Small
+3
+δ = 1, 2, 3
+4
+Medium
+9
+10
+Large
+15
+16
+4.2. Simulation Steps
+In this paper, all experiments are performed on an Intel(R) Core (TM) i9-10900CPU@3.70
+GHz PC, and the simulation program is executed with Python under the Windows 10
+operating system. Four basic libraries in Python are employed to simulate the entire pro-
+cess: NumPy, Pandas, Matplotlib, and Time. Speciﬁcally, the NumPy is used to handle
+the calculations of a matrix; the Pandas is used to export the generated data in the simu-
+lation and perform further analysis; the Matplotlib is used for drawing two-dimensional
+diagrams, while the Time is added for addressing problems with time information.
+The simulation program consists of a clock module, a data generation module, a task
+assignment module, and an output module. The clock module, which uses functions from
+the Time library, is the ﬁrst component of the simulation. The clock module keeps track
+of the start and end time of each simulation, which aids in evaluating the computational
+complexity of the whole algorithm. Meanwhile, the clock module also records the times-
+tamp si when each UAV ui obtains the latest message from the other UAVs. Then, the
+data generation module is introduced and is based on the functions in the NumPy library.
+In particular, this module randomly generates the initial scenario for each simulation,
+according to the settings in Section 4.1. To this end, the task assignment module imports
+the above-mentioned data and obtains the proper allocation for each UAV . Ultimately, the
+output module is employed based on the functions in the Pandas and the Matplotlib, such
+that the visual output of the allocation results is achieved.
+4.3. Simulation Results
+4.3.1. Validation Experiments
+A series of validation experiments are conducted to evaluate the performance of
+DATW; there are four performance parameters to consider:
+Drones 2022, 6, 226 13 of 18
+• G: the average completion time of all tasks, which is the objective of the studied MTPA
+and can be obtained from (6);
+• Λ: the number of iterations, which is determined by the last time an allocation change
+is made;
+• Π: the number of communications, which depends on the passed messages summed
+over all UAVs during the consensus phases in Section 3.2 and the secondary conﬂict
+resolution in Section 3.3.2.;
+• Ψ: the percentage of feasible tasks that are allocated to UAVs and the given time window
+constraints are satisﬁed.
+The above parameter G reﬂects the objective of MATP ,Λ determines the computation
+time of the whole algorithm, Π implies the communication cost of performing DATW, and
+Ψ illustrates the effectiveness of DATW in handling the time window constraints.
+In this section, all experiments are conducted based on the scenarios summarized in
+Table 4. For each combination in Table 4, 30 instances are created under randomly generated
+initialization settings. A mesh communication topology is used such that each UAV can
+communicate with every other UAV . The simulation results are presented in Table 5.
+Table 5. Result of the DATW Method in Search and Rescue Scenario.
+UA V Num Task Num TUR
+Ave.
+Completion
+Time (G)
+Ave. Iteration
+Times (Λ)
+Ave.
+Communication
+Num (Π)
+Percentage of
+Feasible Tasks (Ψ)
+3
+3 1 103.88 1.27 5.83 100.0%
+6 2 149.05 2.47 9.07 93.8%
+9 3 149.02 3.13 11.03 74.1%
+4
+4 1 128.01 2.2 13.5 96.7%
+8 2 143.66 2.87 16.53 92.5%
+12 3 146.02 3.67 16.43 75.6%
+9
+9 1 110.37 3.03 42.4 99.3%
+18 2 132.89 5.1 67.73 96.7%
+27 3 139.16 6.4 65.47 84.7%
+10
+10 1 104.42 3.67 58.83 99.3%
+20 2 129.91 5.8 86.9 96.0%
+30 3 139.31 6.3 72.33 85.8%
+15
+15 1 100.87 4.8 114.23 98.4%
+30 2 123.82 6.83 147.37 97.0%
+45 3 135.28 8.07 142.27 87.7%
+16
+16 1 100.64 4.87 130.07 99.8%
+32 2 124.27 6.8 156.5 96.4%
+48 3 135.42 7.93 160.3 86.6%
+According to Table 5, the average rate of feasible tasks exceeds 70% for each combina-
+tion, which means that DATW is capable of ﬁnding a solution that allocates most tasks to
+UAVs properly. Moreover, we observe that the parameter TUR directly affects the average
+completion time and the number of iterations. In particular, the average completion time G
+logically rises with TUR as there are more tasks required to be performed. Additionally,
+as TUR becomes larger, each agent has increasingly available task options, such that the
+algorithm must iterate more times to select the valuable allocation. Hence, parameter Λ is
+enlarged. Moreover, the parameter Π increases with an increasing UAV number since more
+communications are required to reach consensus when the number of UAVs is increasing.
+Drones 2022, 6, 226 14 of 18
+In addition, Π appears to take its minimum value at δ = 1 when the number of UAVs is not
+changed. The reasons seem simple: the number of tasks is relatively small with δ = 1, and
+hence, the allocated tasks are much easier to satisfy with the time window constraints. In
+this case, DATW may achieve its optimal allocation before the task reallocation phase.
+4.3.2. Comparisons on the Task Reallocation Phase
+Task reallocation, the third phase of DATW, aims to allocate the tasks to UAVs that
+are unassigned after the ﬁrst two phases. To validate the effectiveness of this reallocation
+phase, we carry out our experiments to compare and analyze the allocations before and
+after this phase. Herein, each scenario combination in Table 4 is simulated 50 times under
+random initialization settings.
+From Figure 3, when the TUR is set as δ ∈ {1, 2, 3}, the line graphs depict the average
+number of allocated tasks before and after the task reallocation phase. The bar graphs
+depict the average increase in the number of allocated tasks during that phase. Notably,
+the task reallocation phase can signiﬁcantly improve the total number of allocated tasks
+from the solution achieved by the ﬁrst two phases with various UAV numbers and TURs.
+Comparing (a), (b), and (c) in Figure 3, for combinations with the same UAV numbers,
+more tasks are allocated during the third phase as the value of TUR increases. This is
+because when the value of TUR grows, there are more tasks involved, such that the time
+window constraints between tasks are more likely to overlap. As this situation leads to
+greater difﬁculties in assigning tasks, the task reallocation phase is necessary for obtaining
+a well-performed allocation. Moreover, we can observe that the number of tasks allocated
+through the third phase logically increases with the number of UAVs for each value of TUR.
+In the best case, the average increase in the number of allocated tasks is up to 8.04 when
+allocating 45 tasks to 15 UAVs.
+Drones 2022, 6, x FOR PEER REVIEW 14 of 19 
+ 
+16 
+16 1 100.64 4.87 130.07 99.8% 
+32 2 124.27 6.8 156.5 96.4% 
+48 3 135.42 7.93 160.3 86.6% 
+4.3.2. Comparisons on the Task Reallocation Phase 
+Task reallocation, the third phase of DATW, aims to allocate the tasks to UAVs that 
+are unassigned after the first two phases. To validate the effectiveness of this reallocation 
+phase, we carry out our expe riments to compare and analyze the allocations before and 
+after this phase. Herein, each scenario combination in Table 4 is simulated 50 times under 
+random initialization settings. 
+From Figure 3, when the TUR is set as δ ∈ {1, 2, 3}, the line graphs depict the average 
+number of allocated tasks before and after the task reallocation phase.  The bar graphs 
+depict the average increase in the number of allocated tasks during that phase. Notably,  
+the task reallocation phase can significantl y improve the total number of allocated tasks 
+from the solution achieved by the first two phases with various UAV numbers and TURs. 
+Comparing (a), (b), and (c) in Figure 3, for combinations with the same UAV numbers, 
+more tasks are allocated during the third phase as the value of TUR increases. This is be-
+cause when the value of TUR grows , there are more tasks involved, such that the time 
+window constraints between tasks are more likely to overlap. As this situation leads to 
+greater difficulties in assigning tasks, the task reallocation phase is necessary for obtaining 
+a well-performed allocation. Moreover, we can observe that the number of tasks allocated 
+through the third phase logically increases with the number of UAVs  for each value of 
+TUR. In the best c ase, the average increase in the number of allocated tasks is up to 8.04 
+when allocating 45 tasks to 15 UAVs. 
+   
+(a) (b) (c) 
+Figure 3. Average number of the allocated tasks before and after the task reallocation phase w ith 
+regards to various TURs. (a) TUR: δ = 1. (b) TUR: δ = 2. (c) TUR: δ = 3. 
+4.3.3. E-CBBA Versus DATW 
+Since the proposed DATW and the E-CBBA algorithm i n [26] both aim to allocate 
+tasks within validity time windows, we conduct a range of comparisons to determine the 
+merit of the assignments achieved. Herein, we assume that the obtained allocation deems 
+to be a success if each task is assigned to a proper UAV and complies with time window 
+constraints. Then, based on this assumption, we introduce a new parameter, namely, the 
+success rate (SR), to assess the performance of these two algorithms. All comparisons are 
+conducted based on the search and rescue scenarios, where the UAV number is varied as a 
+parameter from two to thirty and TUR is set as δ = 2. Each combination of these scenarios 
+Figure 3. Average number of the allocated tasks before and after the task reallocation phase with
+regards to various TURs. (a) TUR: δ = 1. (b) TUR: δ = 2. (c) TUR: δ = 3.
+4.3.3. E-CBBA Versus DATW
+Since the proposed DATW and the E-CBBA algorithm in [ 26] both aim to allocate
+tasks within validity time windows, we conduct a range of comparisons to determine the
+merit of the assignments achieved. Herein, we assume that the obtained allocation deems
+to be a success if each task is assigned to a proper UAV and complies with time window
+constraints. Then, based on this assumption, we introduce a new parameter, namely, the
+success rate (SR), to assess the performance of these two algorithms. All comparisons are
+conducted based on the search and rescue scenarios, where the UAV number is varied as a
+parameter from two to thirty and TUR is set as δ = 2. Each combination of these scenarios
+Drones 2022, 6, 226 15 of 18
+is simulated 50 times under random initialization settings, such that the success rate of a
+combination is calculated as follows:
+SR = Nsa/50 (17)
+where Nsa denotes the number of successful allocations over all simulations and 50 is the
+total number of simulations.
+Figure 4 compares the success rate of the DATW and the E-CBBA with different
+numbers of UAVs. The line graphs show the success rate of the two algorithms, while
+the bar graphs show the increase in success rate achieved by the DATW. Obviously, it
+demonstrates that the DATW consistently outperforms the E-CBBA algorithm in terms of
+success rate. Speciﬁcally, the average success rate for DATW is 52.7%, while the average
+success rate for E-CBBA is 34.7%, which means that the proposed DATW achieves an 18%
+(=52.7% − 34.7%) increase in the average success rate. Notably, in the combination of
+22 UAVs and 44 tasks, all tasks are successfully allocated within validity time windows
+32 times by DATW, but only 10 times by E-CBBA.
+Drones 2022, 6, x FOR PEER REVIEW 15 of 19 
+ 
+is simulated 50 times under random initialization settings, such that the success rate of a 
+combination is calculated as follows: 
+𝑆𝑅=𝑁𝑠𝑎/50 (17) 
+where Nsa denotes the number of successful allocations over all simulations and 50 is the 
+total number of simulations. 
+Figure 4 compares the success rate of the DATW and the E-CBBA with different num-
+bers of UAVs. The line graphs show the success rate of the two algorithms, while the bar 
+graphs show the increase in success rate achieved by the DATW.  Obviously, it demon-
+strates that the DATW consistently outperforms the E-CBBA algorithm in terms of success 
+rate. Specifically, the average success rate for DATW is 52.7%, while the average success 
+rate for E-CBBA is 34.7%, which means that the proposed DATW achieves an 18% (=52.7% 
+− 34.7%) increase in the average success rate. Notably, in the combination of 22 UAVs and 
+44 tasks, all tasks are successfully allocated w ithin validity time windows  32 times by 
+DATW, but only 10 times by E-CBBA. 
+ 
+Figure 4. Success rate of allocations comparing E-CBBA and DATW algorithms. 
+4.3.4. Topology Comparison 
+The dynamic environment with moving UAVs incurs various changes in communi-
+cation typologies between UAVs, and thus, the proposed algorithm is required to perform 
+effectively in different communication topologies.  Figure 5 depicts four basic communi-
+cation topologies with nondirected graphs: a fully connected mesh topology, a row topol-
+ogy, a circular topology , and a star topology. Specifically, we aim to analyze how these 
+different typologies affect the performance of DATW based on a search and rescue scenario 
+and assess the DATW with respect to the number of communications (П) and the percent-
+age of feasible tasks (Ψ). All experiments are conducted on a scenario combination with 16 
+UAVs and 32 tasks, where the combination is simulated 50 times under random initiali-
+zation settings. 
+Figure 4. Success rate of allocations comparing E-CBBA and DATW algorithms.
+4.3.4. Topology Comparison
+The dynamic environment with moving UAVs incurs various changes in communica-
+tion typologies between UAVs, and thus, the proposed algorithm is required to perform
+effectively in different communication topologies. Figure 5 depicts four basic communica-
+tion topologies with nondirected graphs: a fully connected mesh topology, a row topology,
+a circular topology, and a star topology. Speciﬁcally, we aim to analyze how these different
+typologies affect the performance of DATW based on a search and rescue scenario and assess
+the DATW with respect to the number of communications (Π) and the percentage of feasible
+tasks (Ψ). All experiments are conducted on a scenario combination with 16 UAVs and
+32 tasks, where the combination is simulated 50 times under random initialization settings.
+The scatterplot in Figure 6 shows the result of over 50 simulations, which compares
+the PI, E-CBBA, and DATW in terms of parameters Π and Ψ. Obviously, the parameter Ψ is
+independent of the speciﬁc topology, while the parameter Π appears to vary according to
+the type of topology. In particular, the circular topology and the star topology have a similar
+degree of communication, such that Π and Ψ are similar across topologies for PI, E-CBBA,
+and DATW. Moreover, for each algorithm, the parameterΠ decreases notably with fully
+connected mesh topology and increases with the row topology. Such an increase inΠ is due
+to information requiring multiple communications among UAVs to reach a consensus when
+the network is not fully connected. Moreover, the PI algorithm cannot effectively handle
+the task allocation problem under various time window constraints, while the proposed
+DATW based on PI always achieves well-performing allocations. Additionally, we observe
+that under each communication topology, the distributions of the parameter Π are always
+similar, in terms of the DATW and PI algorithms. That is, the DATW achieves superior
+Drones 2022, 6, 226 16 of 18
+allocations without imposing any extra communication burdens and allocates the most
+tasks to UAVs within time window constraints.
+Drones 2022, 6, x FOR PEER REVIEW 16 of 19 
+ 
+ 
+Figure 5. Four basic communication topologies. (a) Mesh communication. (b) Row communication. 
+(c) Circular communication. (d) Star row communication. 
+The scatterplot in Figure 6 shows the result of over 50 simulations, which compares 
+the PI, E-CBBA, and DATW in terms of parameters П and Ψ. Obviously, the parameter Ψ 
+is independent of the specific topology, while the parameter П appears to vary according 
+to the type of topology. In particular, the circular topology and the star topology have a 
+similar degree of communication, such that П and Ψ are similar across topologies for PI, 
+E-CBBA, and DATW. Moreover, for each algorithm, the parameter П decreases notably 
+with fully connected mesh topology and increases with the row topology. Such an in-
+crease in П is due to information requiring multiple  communications among UAVs to 
+reach a consensus when the network is not fully connected. Moreover, the PI algorithm 
+cannot effectively handle the task allocation problem under various time window con-
+straints, while the proposed DATW based on PI always achieves well-performing alloca-
+tions. Additionally, we observe that under each communication topology, the distribu-
+tions of the parameter П are always similar , in terms of the DATW and PI algorithms. 
+That is, the DATW achieves superior allocations without imposing any extra communica-
+tion burdens and allocates the most tasks to UAVs within time window constraints. 
+  
+(a) (b) 
+Figure 5. Four basic communication topologies. (a) Mesh communication. (b) Row communication.
+(c) Circular communication. (d) Star row communication.
+Drones 2022, 6, x FOR PEER REVIEW 16 of 19 
+ 
+ 
+Figure 5. Four basic communication topologies. (a) Mesh communication. (b) Row communication. 
+(c) Circular communication. (d) Star row communication. 
+The scatterplot in Figure 6 shows the result of over 50 simulations, which compares 
+the PI, E-CBBA, and DATW in terms of parameters П and Ψ. Obviously, the parameter Ψ 
+is independent of the specific topology, while the parameter П appears to vary according 
+to the type of topology. In particular, the circular topology and the star topology have a 
+similar degree of communication, such that П and Ψ are similar across topologies for PI, 
+E-CBBA, and DATW. Moreover, for each algorithm, the parameter П decreases notably 
+with fully connected mesh topology and increases with the row topology. Such an in-
+crease in П is due to information requiring multiple  communications among UAVs to 
+reach a consensus when the network is not fully connected. Moreover, the PI algorithm 
+cannot effectively handle the task allocation problem under various time window con-
+straints, while the proposed DATW based on PI always achieves well-performing alloca-
+tions. Additionally, we observe that under each communication topology, the distribu-
+tions of the parameter П are always similar , in terms of the DATW and PI algorithms. 
+That is, the DATW achieves superior allocations without imposing any extra communica-
+tion burdens and allocates the most tasks to UAVs within time window constraints. 
+  
+(a) (b) 
+Drones 2022, 6, x FOR PEER REVIEW 17 of 19 
+ 
+  
+(c) (d) 
+Figure 6. Scatterplot with respect to number of feasible tasks and number of communications over 
+different network topologies. (a) Mesh communication. (b) Row communication. (c) Circular com-
+munication. (d) Star row communication. 
+5. Conclusions 
+In this paper, a distributed task allocation algorithm (DATW) is proposed for the 
+MTAP problem with time window constraints. This algorithm embeds the time window 
+constraints into the PI-based decentralized framework for the first time and aims to min-
+imize the average completion time of all tasks. As an extension of the PI algorithm, the 
+DATW method uses a three -phase architecture, including the task inclusion phase, con-
+flict resolution phase, and task reallocation phase. Herein, the average number of allo-
+cated tasks exceeds 70% by the aid of the newly introduced task reallocation phase. An-
+other novel idea is to correlate the significance value of tasks with the time window con-
+straints, such that each task can be completed as early as possible during its validity inter-
+val. Moreover, the start time of each task is broadcasted among agents via communication 
+typology to allocate tasks in a validity time interval without imposing any extra commu-
+nication burdens. To this end, a conflict-free allocation with a minimum average task com-
+pletion time can be obtained by the proposed DATW algorithm, where the vast majority 
+of tasks are assigned within the validity time window. A series of simulations are con-
+ducted under a search and rescue scenario. The experimental r esults confirm that the 
+DATW is effective and superior in increasing the total number of allocated tasks as well 
+as minimizing the average completion time of the tasks. Moreover, compared with exist-
+ing (CBBA-based) solutions, results show up to an 18% increase in success rate (SR) using 
+the DATW. Thus, the DATW can successfully enable a team of UAVs to perform complex 
+missions under various time window constraints. 
+Future work will focus on facilitating real -time task allocation in dynamic environ-
+ments, which indicates integrating the presented DATW into the asynchronous frame-
+work and addressing the MTAP with latency in task computation and communication. 
+Author Contributions: Conceptualization, W.C., R.L., Y.F., and Y.Y.; methodology, W.C. and R.L.; 
+validation, W.C.; resources, Y.F. and Y.Y.; data curation, W.C.; writing—original draft preparation, 
+W.C.; writing—review and editing, Y.F. and Y.Y.; supervision, Y.F. and Y.Y.; funding acquisition, 
+Y.Y. All authors have read and agreed to the published version of the manuscript. 
+Funding: This research was funded by the Science and Technology Innovation 2030-Key Project of 
+“New Generation Artificial Intelligence”, grant number 2020AAA0108200. 
+Informed Consent Statement: Not applicable. 
+Data Availability Statement: Not applicable. 
+Conflicts of Interest: The authors declare no conflicts of interest. 
+  
+Figure 6. Scatterplot with respect to number of feasible tasks and number of communications over
+different network topologies. ( a) Mesh communication. ( b) Row communication. ( c) Circular
+communication. (d) Star row communication.
+5. Conclusions
+In this paper, a distributed task allocation algorithm (DATW) is proposed for the
+MTAP problem with time window constraints. This algorithm embeds the time window
+constraints into the PI-based decentralized framework for the ﬁrst time and aims to min-
+imize the average completion time of all tasks. As an extension of the PI algorithm, the
+DATW method uses a three-phase architecture, including the task inclusion phase, conﬂict
+Drones 2022, 6, 226 17 of 18
+resolution phase, and task reallocation phase. Herein, the average number of allocated tasks
+exceeds 70% by the aid of the newly introduced task reallocation phase. Another novel idea
+is to correlate the signiﬁcance value of tasks with the time window constraints, such that
+each task can be completed as early as possible during its validity interval. Moreover, the
+start time of each task is broadcasted among agents via communication typology to allocate
+tasks in a validity time interval without imposing any extra communication burdens. To
+this end, a conﬂict-free allocation with a minimum average task completion time can be
+obtained by the proposed DATW algorithm, where the vast majority of tasks are assigned
+within the validity time window. A series of simulations are conducted under a search
+and rescue scenario. The experimental results conﬁrm that the DATW is effective and
+superior in increasing the total number of allocated tasks as well as minimizing the average
+completion time of the tasks. Moreover, compared with existing (CBBA-based) solutions,
+results show up to an 18% increase in success rate (SR) using the DATW. Thus, the DATW
+can successfully enable a team of UAVs to perform complex missions under various time
+window constraints.
+Future work will focus on facilitating real-time task allocation in dynamic environ-
+ments, which indicates integrating the presented DATW into the asynchronous framework
+and addressing the MTAP with latency in task computation and communication.
+Author Contributions: Conceptualization, W.C., R.L., Y.F. and Y.Y.; methodology, W.C. and R.L.;
+validation, W.C.; resources, Y.F. and Y.Y.; data curation, W.C.; writing—original draft preparation,
+W.C.; writing—review and editing, Y.F. and Y.Y.; supervision, Y.F. and Y.Y.; funding acquisition, Y.Y.
+All authors have read and agreed to the published version of the manuscript.
+Funding: This research was funded by the Science and Technology Innovation 2030-Key Project of
+“New Generation Artiﬁcial Intelligence”, grant number 2020AAA0108200.
+Informed Consent Statement: Not applicable.
+Data Availability Statement: Not applicable.
+Conﬂicts of Interest: The authors declare no conﬂict of interest.
+References
+1. Shi, M.; Qin, K.; Liang, J.; Liu, J. Distributed Control of Uncertain Multiagent Systems for Tracking a Leader with Unknown
+Fractional-Order Dynamics. Int. J. Robust Nonlinear Control 2019, 29, 2254–2271. [CrossRef]
+2. Shi, M.; Qin, K.; Liu, J. Cooperative Multi-Agent Sweep Coverage Control for Unknown Areas of Irregular Shape. IET Control
+Theory Appl. 2018, 12, 1983–1994. [CrossRef]
+3. Shi, M.; Qin, K.; Li, P .; Liu, J. Consensus Conditions for High-Order Multiagent Systems with Nonuniform Delays.Math. Probl.
+Eng. 2017, 2017, 7307834. [CrossRef]
+4. Li, X.; Li, C.; Yang, Y.; Mo, L. Consensus for Heterogeneous Multi-Agent Systems with Nonconvex Input Constraints and
+Nonuniform Time Delays. J. Frankl. Inst.-Eng. Appl. Math. 2020, 357, 3622–3635. [CrossRef]
+5. Li, X.; Li, C.; Yang, Y. Heterogeneous Linear Multi-Agent Consensus with Nonconvex Input Constraints and Switching Graphs.
+Inf. Sci. 2019, 501, 397–405. [CrossRef]
+6. Li, X.; Gao, K.; Lin, P .; Mo, L. A Further Result on Consensus Problems of Second-Order Multi-Agent Systems with Directed
+Graphs, a Moving Mode and Multiple Delays. ISA Trans. 2017, 71, 21–24. [CrossRef]
+7. Yu, X.; Gao, X.; Wang, L.; Wang, X.; Ding, Y.; Lu, C.; Zhang, S. Cooperative Multi-UAV Task Assignment in Cross-Regional Joint
+Operations Considering Ammunition Inventory. Drones 2022, 6, 77. [CrossRef]
+8. Bethke, B.; Valenti, M.; How, J.P . UAV task assignment. IEEE Robot. Autom. Mag. March. 2008, 15, 39–44. [CrossRef]
+9. Chen, Y.; Yang, D.; Yu, J. Multi-UAV Task Assignment With Parameter and Time-Sensitive Uncertainties Using Modiﬁed Two-Part
+Wolf Pack Search Algorithm. IEEE Trans. Aerosp. Electron. Syst. 2018, 54, 2853–2872. [CrossRef]
+10. Shima, T.; Rasmussen, S.J.; Sparks, A.G.; Passino, K.M. Multiple Task Assignments for Cooperating Uninhabited Aerial Vehicles
+Using Genetic Algorithms. Comput. Oper. Res. 2006, 33, 3252–3269. [CrossRef]
+11. Darrah, M.; Niland, W.; Stolarik, B. Multiple UAV Dynamic Task Allocation Using Mixed Integer Linear Programming in a SEAD
+Mission. In Proceedings of the Infotech@Aerospace, Arlington, VA, USA, 26 September 2005; American Institute of Aeronautics
+and Astronautics: Reston, VA, USA, 2005.
+12. Stuijk, S.; Basten, T.; Geilen, M.C.W.; Corporaal, H. Multiprocessor Resource Allocation for Throughput-Constrained Synchronous
+Dataﬂow Graphs. In Proceedings of the 44th annual Design Automation Conference, San Diego, CA, USA, 4–8 June 2007; pp.
+777–782.
+Drones 2022, 6, 226 18 of 18
+13. Secrest, B.R. Traveling Salesman Problem for Surveillance Mission Using Particle Swarm Optimization ; School of Engineering and
+Management, Air Force Institute of Technology Wright-Patterson AFB: Dayton, OH, USA, 2001.
+14. O’Rourke, K.P .; Carlton, W.B.; Bailey, T.G.; Hill, R.R. Dynamic Routing of Unmanned Aerial Vehicles Using Reactive Tabu Search.
+Mil. Oper. Res. 2001, 6, 5–30. [CrossRef]
+15. Deng, W.; Zhang, X.; Zhou, Y.; Liu, Y.; Zhou, X.; Chen, H.; Zhao, H. An Enhanced Fast Non-Dominated Solution Sorting Genetic
+Algorithm for Multi-Objective Problems. Inf. Sci. 2022, 585, 441–453. [CrossRef]
+16. Blum, C. Ant Colony Optimization: Introduction and Recent Trends. Phys. Life Rev. 2005, 2, 353–373. [CrossRef]
+17. Wang, D.; Tan, D.; Liu, L. Particle Swarm Optimization Algorithm: An Overview. Soft Comput. 2018, 22, 387–408. [CrossRef]
+18. Sun, Y.; Wu, H.; Zhan, R. Optimal Scheduling Method of Marine Transportation Resources Based on Wolf Swarm Algorithm.J.
+Coast. Res. 2019, 93, 646–651. [CrossRef]
+19. Gerkey , B.P .; Mataric, M.J. Sold!: Auction Methods for Multirobot Coordination.IEEE T rans. Robot. Autom.2002, 18, 758–768. [CrossRef]
+20. Qin, B.; Zhang, D.; Tang, S.; Wang, M. Distributed Grouping Cooperative Dynamic Task Assignment Method of UAV Swarm.
+Appl. Sci. 2022, 12, 2865. [CrossRef]
+21. Lemaire, T.; Alami, R.; Lacroix, S. A Distributed Tasks Allocation Scheme in Multi-UAV Context. In Proceedings of the IEEE
+International Conference on Robotics and Automation, Proceedings. ICRA ’04. 2004, New Orleans, LA, USA, 26 April–1 May
+2004; Volume 4, pp. 3622–3627.
+22. Oh, G.; Kim, Y.; Ahn, J.; Choi, H.-L. Market-Based Distributed Task Assignment of Multiple Unmanned Aerial Vehicles for
+Cooperative Timing Mission. J. Aircr. 2017, 54, 2298–2310. [CrossRef]
+23. Zhen, Z.; Wen, L.; Wang, B.; Hu, Z.; Zhang, D. Improved Contract Network Protocol Algorithm Based Cooperative Target
+Allocation of Heterogeneous UAV Swarm. Aerosp. Sci. Technol. 2021, 119, 107054. [CrossRef]
+24. Choi, H.-L.; Brunet, L.; How, J.P . Consensus-Based Decentralized Auctions for Robust Task Allocation.IEEE Trans. Robot. 2009, 25,
+912–926. [CrossRef]
+25. Whitten, A.K.; Choi, H.-L.; Johnson, L.B.; How, J.P . Decentralized Task Allocation with Coupled Constraints in Complex Missions.
+In Proceedings of the 2011 American Control Conference, San Francisco, CA, USA, 29 June–1 July 2011; pp. 1642–1649.
+26. Ponda, S.; Redding, J.; Choi, H.-L.; How, J.P .; Vavrina, M.; Vian, J. Decentralized Planning for Complex Missions with Dynamic
+Communication Constraints. In Proceedings of the 2010 American Control Conference, Baltimore, MD, USA, 30 June–2 July 2010;
+pp. 3998–4003.
+27. Whitbrook, A.; Meng, Q.; Chung, P .W.H. A Novel Distributed Scheduling Algorithm for Time-Critical Multi-Agent Systems. In
+Proceedings of the 2015 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), Hamburg, Germany, 28
+September–2 October 2015; pp. 6451–6458.
+28. Zhao, W.; Meng, Q.; Chung, P .W.H. A Heuristic Distributed Task Allocation Method for Multivehicle Multitask Problems and Its
+Application to Search and Rescue Scenario. IEEE Trans. Cybern. 2016, 46, 902–915. [CrossRef] [PubMed]
+29. Geng, L.; Zhang, Y.F.; Wang, J.; Fuh, J.Y.; Teo, S.H. Cooperative Mission Planning with Multiple UAVs in Realistic Environments.
+Unmanned Syst. 2014, 2, 73–86. [CrossRef]
+30. Zheng, X.; Zhang, F.; Song, T.; Lin, D. Heterogeneous Multi-UAV Distributed Task Allocation Based on CBBA. In Proceedings of
+the 2019 IEEE International Conference on Unmanned Systems (ICUS), Beijing, China, 17–19 October 2019; pp. 704–709.
+31. Turner, J.; Meng, Q.; Schaefer, G.; Whitbrook, A.; Soltoggio, A. Distributed Task Rescheduling With Time Constraints for the
+Optimization of Total Task Allocations in a Multirobot System.IEEE Trans. Cybern. 2018, 48, 2583–2597. [CrossRef] [PubMed]
