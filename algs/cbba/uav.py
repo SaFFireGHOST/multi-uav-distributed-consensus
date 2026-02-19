@@ -1,5 +1,4 @@
-from algs.datw.uav import UAV
-from shared.utils import calculate_distance
+from shared.models import UAV
 
 class CBBAUAV(UAV):
     """
@@ -20,9 +19,6 @@ class CBBAUAV(UAV):
         We want to MINIMIZE Cost J, which is equivalent to MAXIMIZING Score c_ij.
         
         Cost J = Total Completion Time (Sum of finish times).
-        
-        Note: DATW code minimizes 'significance' (lower is better).
-        So here we just return (NewCost - OldCost).
         """
         if task in sequence:
             return float('inf'), -1

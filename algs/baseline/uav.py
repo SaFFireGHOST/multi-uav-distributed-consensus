@@ -1,5 +1,5 @@
 
-from algs.datw.uav import UAV
+from shared.models import UAV
 from shared.utils import calculate_distance
 
 class BaselineUAV(UAV):
@@ -31,26 +31,12 @@ class BaselineUAV(UAV):
 
     def calculate_marginal_significance(self, task, sequence):
         """
-        Baseline Marginal: Distance from end of current path to new task.
-        Greedy approach: Always append to end? 
-        Or insert where distance is minimal? 
-        "Greedy distance" usually means picking the task closest to current position (or end of path).
-        Let's assume insertion at optimal position to minimize distance increase (TSP-like) 
-        BUT with Time Window constraint check.
+        Baseline: Simple distance-based greedy.
+        Appends tasks to end of sequence (Nearest Neighbor).
+        Returns (distance, position) or (inf, -1) if time window invalid.
         """
         if task in sequence:
             return float('inf'), -1
-            
-        best_marginal = float('inf')
-        best_idx = -1
-        
-        # Try inserting at every position to find min distance increase
-        # But wait! "Baseline... no optimization". 
-        # "UAV is assigned to one with least distance".
-        # This implies: Select unassigned task closest to ME (current end of path).
-        # So we only check appending to end?
-        # Appending to end is the "pure greedy" strategy (Nearest Neighbor).
-        # Let's do Nearest Neighbor (Append only).
         
         # Append to end
         k = len(sequence)
@@ -97,16 +83,11 @@ class BaselineUAV(UAV):
                 if self.Z[task_id] == self.id:
                     continue
                 
-                # Check marginal (distance)
-                # We only support appending (from calculate_marginal_significance logic above)
                 dist, pos = self.calculate_marginal_significance(task, self.tasks)
                 
                 if dist == float('inf'):
                     continue
                 
-                # Check against current belief (Consensus)
-                # If someone else claims it with lower distance?
-                # Q stores distance now.
                 if dist >= self.Q[task_id]:
                     continue
                     
@@ -115,7 +96,6 @@ class BaselineUAV(UAV):
                     best_task = task
             
             if best_task:
-                # Add it
                 dist, pos = self.calculate_marginal_significance(best_task, self.tasks)
                 self.tasks.append(best_task)
                 self.Z[best_task.id] = self.id
@@ -128,7 +108,5 @@ class BaselineUAV(UAV):
         return updated
         
     def secondary_inclusion(self):
-        # Baseline might not even have "secondary inclusion" or "reallocation".
-        # But to be fair comparison of *metrics*, let's allow it to try picking up leftovers
-        # using same greedy logic.
+        """Reuse same greedy logic for Phase 3 reallocation."""
         return self.task_inclusion()
