@@ -75,6 +75,16 @@ def evaluate_metrics(uavs, tasks, execution_time, additional_info=None):
         if not valid_assignments:
             break
             
+    # 3. Calculate Mission Time (Max finish time)
+    mission_time = 0
+    for u in uavs:
+        if u.tasks:
+            times = u._calculate_times_for_sequence(u.tasks)
+            # Finish time of last task = start_time + duration
+            last_finish = times[-1] + u.tasks[-1].duration
+            if last_finish > mission_time:
+                mission_time = last_finish
+            
     success = (assigned_count == len(tasks)) and (not conflict) and valid_assignments
     
     results = {
@@ -87,7 +97,8 @@ def evaluate_metrics(uavs, tasks, execution_time, additional_info=None):
         "valid": valid_assignments,
         "conflict": conflict,
         "uavs": uavs,
-        "tasks": tasks
+        "tasks": tasks,
+        "mission_time": mission_time
     }
     
     if additional_info:

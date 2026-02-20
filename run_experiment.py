@@ -58,7 +58,15 @@ def run_experiments(num_trials=30):
             res_optimal = {'total_cost': 0, 'assigned_tasks': 0, 'success': False}
             optimal_results.append(res_optimal)
         
-        print(f"Trial {i}: DATW {res_datw['total_cost']:.2f} ({res_datw['assigned_tasks']}/{num_tasks}) | Base {res_base['total_cost']:.2f} ({res_base['assigned_tasks']}/{num_tasks}) | Optimal {res_optimal['total_cost']:.2f} ({res_optimal['assigned_tasks']}/{num_tasks})")
+        # Get execution times and mission times
+        t_datw = res_datw.get('execution_time', 0)
+        m_datw = res_datw.get('mission_time', 0)
+        t_base = res_base.get('execution_time', 0)
+        m_base = res_base.get('mission_time', 0)
+        t_opt = res_optimal.get('execution_time', 0)
+        m_opt = res_optimal.get('mission_time', 0)
+
+        print(f"Trial {i}: DATW {res_datw['total_cost']:.2f} ({res_datw['assigned_tasks']}/{num_tasks}) [Comp: {t_datw:.3f}s | Mission: {m_datw:.1f}s] | Base {res_base['total_cost']:.2f} ({res_base['assigned_tasks']}/{num_tasks}) [Comp: {t_base:.3f}s | Mission: {m_base:.1f}s] | Optimal {res_optimal['total_cost']:.2f} ({res_optimal['assigned_tasks']}/{num_tasks}) [Comp: {t_opt:.3f}s | Mission: {m_opt:.1f}s]")
 
     # Calculate metrics
     def get_metrics(results):
@@ -66,11 +74,13 @@ def run_experiments(num_trials=30):
         success_count = sum(1 for r in results if r['success'])
         avg_cost = statistics.mean([r['total_cost'] for r in results])
         avg_assigned = statistics.mean([r['assigned_tasks'] for r in results])
-        return success_count, avg_cost, avg_assigned
+        avg_time = statistics.mean([r.get('execution_time', 0) for r in results])
+        avg_mission = statistics.mean([r.get('mission_time', 0) for r in results])
+        return success_count, avg_cost, avg_assigned, avg_time, avg_mission
 
-    s_datw, c_datw, a_datw = get_metrics(datw_results)
-    s_base, c_base, a_base = get_metrics(baseline_results)
-    s_optimal, c_optimal, a_optimal = get_metrics(optimal_results)
+    s_datw, c_datw, a_datw, t_datw_avg, m_datw_avg = get_metrics(datw_results)
+    s_base, c_base, a_base, t_base_avg, m_base_avg = get_metrics(baseline_results)
+    s_optimal, c_optimal, a_optimal, t_optimal_avg, m_optimal_avg = get_metrics(optimal_results)
     
     print("\n--- Comparative Results ---")
     print(f"Trials: {num_trials}")
@@ -78,6 +88,8 @@ def run_experiments(num_trials=30):
     print(f"--------------------|-------------|-------------|-------------")
     print(f"Success Rate        | {s_datw/num_trials*100:.2f}%      | {s_base/num_trials*100:.2f}%      | {s_optimal/num_trials*100:.2f}%")
     print(f"Avg Assigned Tasks  | {a_datw:.2f}       | {a_base:.2f}       | {a_optimal:.2f}")
+    print(f"Avg Computation Time| {t_datw_avg:.4f}s     | {t_base_avg:.4f}s     | {t_optimal_avg:.4f}s")
+    print(f"Avg Mission Time    | {m_datw_avg:.2f}s      | {m_base_avg:.2f}s      | {m_optimal_avg:.2f}s")
 
 
 
