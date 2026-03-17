@@ -1,2 +1,5 @@
 python simulation.py --visualize --seed=42
 python simulation.py --visualize --baseline --seed=42
+python simulation.py --visualize --baseline --seed=42
+python simulation.py --visualize --optimal --seed=42
+python run_experiment.py 
