@@ -3,3 +3,5 @@ python simulation.py --visualize --baseline --seed=42
 python simulation.py --visualize --baseline --seed=42
 python simulation.py --visualize --optimal --seed=42
 python run_experiment.py 
+python run_experiment_parallel.py
+python sar_optimal/run_sar.py --seed 42

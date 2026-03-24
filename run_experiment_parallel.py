@@ -64,7 +64,7 @@ def run_experiments(num_trials=30):
         if OptimalUAV:
             random.seed(seed)
             uavs_optimal_par = create_uavs(OptimalUAV, uav_configs, tasks)
-            runner_optimal_par = ParallelCentralizedOptimalRunner(verbose=False, num_workers=4)
+            runner_optimal_par = ParallelCentralizedOptimalRunner(verbose=False, num_workers=8)
             res_optimal_par = runner_optimal_par.run(uavs_optimal_par, tasks)
             optimal_parallel_results.append(res_optimal_par)
         else:

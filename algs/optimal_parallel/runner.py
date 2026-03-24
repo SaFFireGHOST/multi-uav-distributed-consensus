@@ -143,8 +143,9 @@ class ParallelCentralizedOptimalRunner:
         initial_states = []
         
         def generate_initial_states(t_idx, c_routes, c_cost):
-            # Target generating states after branching on the first 2 tasks minimum
-            depth_to_branch = min(2, num_tasks)
+            # Target generating states after branching on the first 3 tasks minimum
+            # Depth 2 yields ~12 states. Depth 3 yields ~60 states, which is better for 8+ workers.
+            depth_to_branch = min(3, num_tasks)
             if t_idx == depth_to_branch: 
                 initial_states.append((t_idx, [r[:] for r in c_routes], c_cost))
                 return
