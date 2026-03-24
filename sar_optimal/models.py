@@ -23,7 +23,7 @@ class Task:
     def __repr__(self):
         deps = f", deps={self.predecessors}" if self.predecessors else ""
         dl = f", deadline={self.deadline}" if self.deadline != float('inf') else ""
-        return f"Task(id={self.id}, dur={self.duration}{deps}{dl})"
+        return f"Task(id={self.id}, loc={self.location}, dur={self.duration}{deps}{dl})"
 
 class UAV:
     """
@@ -39,4 +39,5 @@ class UAV:
         self.tasks = [] 
         
     def __repr__(self):
-        return f"UAV(id={self.id}, tasks={[t.id for t in self.tasks]})"
+        tasks_str = f", assigned_tasks={[t.id for t in self.tasks]}" if self.tasks else ""
+        return f"UAV(id={self.id}, loc={self.location}, vel={self.velocity}{tasks_str})"

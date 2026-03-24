@@ -63,6 +63,10 @@ def main():
         UAV(uav_id=2, location=(50, 50), velocity=15)
     ]
     
+    print("\nFleet Initialized:")
+    for u in uavs:
+        print(f"  > {u}")
+    
     # 2. Define Mission Tasks (SAR Constraints Example)
     num_tasks = 5
     seed_text = f" (Seed: {args.seed})" if args.seed is not None else ""
